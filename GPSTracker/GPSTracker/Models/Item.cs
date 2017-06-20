@@ -15,5 +15,8 @@
 			get { return description; }
 			set { SetProperty(ref description, value); }
 		}
+
+		public double Longitude { get; set; }
+		public double Latitude { get; set; }
 	}
 }

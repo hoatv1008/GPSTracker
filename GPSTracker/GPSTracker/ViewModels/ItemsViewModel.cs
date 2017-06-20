@@ -18,19 +18,39 @@ namespace GPSTracker.ViewModels
 
         public ItemsViewModel()
         {
-            Title = "Browse";
+            Title = "Locations";
             Items = new ObservableRangeCollection<Item>();
             LoadItemsCommand = new Command(async () => await ExecuteLoadItemsCommand());
 
-            MessagingCenter.Subscribe<ItemsPage, Position>(this, "LocationChanged", async (obj, item) =>
+            MessagingCenter.Subscribe<Position>(this, "LocationChanged", (item) =>
             {
                 var _item = new Item
                 {
-                    Text = item.Timestamp.ToString("dd/MM hh:mm:ss"),
-                    Description = item.Latitude + "-" + item.Longitude
+                    Text = item.Timestamp.ToString("dd/MM hh:mm:ss") + " " + item.Latitude + ":" + item.Longitude,
+					Description = $"Heading: {item.Heading.ToString()}"
+								+ Environment.NewLine + $"Speed: {item.Speed.ToString()}"
+								+ Environment.NewLine + $"Accuracy: {item.Accuracy.ToString()}"
+								+ Environment.NewLine + $"Altitude: {item.Altitude.ToString()}"
+								+ Environment.NewLine + $"AltitudeAccuracy: {item.AltitudeAccuracy.ToString()}",
+                    Longitude = item.Longitude,
+                    Latitude = item.Latitude
                 };
-                Items.Add(_item);
-                await DataStore.AddItemAsync(_item);
+                Items.Insert(0, _item);
+
+                try
+                {
+                    for (var i = Items.Count; i > 1000; i--)
+                        Items.RemoveAt(i);
+                }
+                catch
+                {
+                    // donothing
+                }
+
+            });
+
+            MessagingCenter.Subscribe<ClearLocationMessage>(this, "ClearAllLocations", (obj) => {
+                Items.Clear();
             });
         }
 

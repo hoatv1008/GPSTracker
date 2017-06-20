@@ -6,6 +6,7 @@ using GPSTracker.ViewModels;
 using Xamarin.Forms;
 using System.Threading.Tasks;
 using Plugin.Geolocator;
+using Plugin.Geolocator.Abstractions;
 
 namespace GPSTracker.Views
 {
@@ -13,12 +14,13 @@ namespace GPSTracker.Views
     {
         ItemsViewModel viewModel;
 
+
         public ItemsPage()
         {
             InitializeComponent();
 
             BindingContext = viewModel = new ItemsViewModel();
-        }
+		}
 
         async void OnItemSelected(object sender, SelectedItemChangedEventArgs args)
         {
@@ -35,17 +37,24 @@ namespace GPSTracker.Views
         async void GPS_Clicked(object sender, EventArgs e)
         {
             var button = (ToolbarItem)sender;
-            if (button.Text.Contains("Start"))
+            if (CrossGeolocator.Current.IsListening == false)
             {
-                await StartListening();
-                button.Text = "Stop Tracking";
+                MessagingCenter.Send(new StartListenLocationMessage(), "StartListenLocationChanged");
+                button.Text = "Stop";
             }
             else
             {
-                await StopListening();
-                button.Text = "Start Tracking";
+                MessagingCenter.Send(new StopListenLocationMessage(), "StopListenLocationChanged");
+                button.Text = "Start";
             }
+            await Task.FromResult(true);
+        }
 
+        async void Clear_Clicked(object sender, EventArgs e){
+
+            MessagingCenter.Send(new ClearLocationMessage(), "ClearAllLocations");
+
+            await Task.FromResult(true);
         }
 
         protected override void OnAppearing()
@@ -54,35 +63,17 @@ namespace GPSTracker.Views
 
             if (viewModel.Items.Count == 0)
                 viewModel.LoadItemsCommand.Execute(null);
+
+            if (CrossGeolocator.Current.IsListening)
+			{
+				btnGPS.Text = "Stop";
+			}
+			else
+			{
+				btnGPS.Text = "Start";
+			}
         }
 
-        async Task StartListening()
-        {
-            await CrossGeolocator.Current.StartListeningAsync(TimeSpan.FromSeconds(5), 10, true, new Plugin.Geolocator.Abstractions.ListenerSettings
-            {
-                ActivityType = Plugin.Geolocator.Abstractions.ActivityType.AutomotiveNavigation,
-                AllowBackgroundUpdates = true,
-                DeferLocationUpdates = true,
-                DeferralDistanceMeters = 1,
-                DeferralTime = TimeSpan.FromSeconds(1),
-                ListenForSignificantChanges = true,
-                PauseLocationUpdatesAutomatically = false
-            });
 
-            CrossGeolocator.Current.PositionChanged += Current_PositionChanged;
-        }
-
-        async Task StopListening()
-        {
-            await CrossGeolocator.Current.StopListeningAsync();
-        }
-
-        private void Current_PositionChanged(object sender, Plugin.Geolocator.Abstractions.PositionEventArgs e)
-        {
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                MessagingCenter.Send(this, "LocationChanged", e.Position);
-            });
-        }
     }
 }

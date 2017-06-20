@@ -1,5 +1,4 @@
 ﻿using GPSTracker.Models;
-
 namespace GPSTracker.ViewModels
 {
 	public class ItemDetailViewModel : BaseViewModel
@@ -17,5 +16,6 @@ namespace GPSTracker.ViewModels
 			get { return quantity; }
 			set { SetProperty(ref quantity, value); }
 		}
+
 	}
 }
